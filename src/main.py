@@ -21,7 +21,10 @@ OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 def load_data():
     #Read dataset
     insurance_data = pd.read_csv(DATA_DIR / "insurance.csv")
-    
+
+    #Print statements used to identify variables, inspect the data,
+    #determine dataset size, check data types for necessary conversions,
+    #and display descriptive statistics.
     print(insurance_data.head())
     print(insurance_data.shape)
     print(insurance_data.dtypes)
@@ -31,6 +34,9 @@ def load_data():
 
 
 def analyze_data(insurance_data):
+    #Print statements to understand the dataset
+    #Set values to be examined for smokers
+    #Find the minimum and maximum charges to see range for the dataset
     print(insurance_data.describe())
     print(insurance_data["smoker"].value_counts())
     print(insurance_data.groupby("smoker")["charges"].mean())
@@ -40,6 +46,9 @@ def analyze_data(insurance_data):
     
 
 def visualize_data(insurance_data):
+    #Outputs a histogram of charges in relation to frequency
+    #bins=30 to better visualize data w/o noise or lack of patterns
+    #dpi=300 enhances image quality
     plt.figure()
     plt.hist(insurance_data["charges"], bins=30)
     plt.xlabel("Charges in usd")
@@ -47,7 +56,9 @@ def visualize_data(insurance_data):
     plt.title("Charges in insurance data")
     plt.savefig(OUTPUT_DIR / "Charges_in_insurance_data.png", dpi=300)
     plt.show()
-    
+
+    #Creates a scatterplot to examine the relationship between
+    #age and insurance charges.
     plt.figure()
     plt.scatter(insurance_data["age"], insurance_data["charges"])
     plt.xlabel("Age")
@@ -55,10 +66,12 @@ def visualize_data(insurance_data):
     plt.title("Insurance charges by age")
     plt.savefig(OUTPUT_DIR / "Charges_by_Age.png", dpi=300)
     plt.show()
-    
+
+    #Sets variables for smoker and non_smokers to be used in next analysis
     smoker = insurance_data[insurance_data["smoker"] == "yes"]
     non_smoker = insurance_data[insurance_data["smoker"] == "no"]
-    
+
+    #Plots the differences in insurance charges for smokers vs. non_smokers
     plt.figure()
     plt.scatter(smoker["age"], smoker["charges"], color="red", label="Smokers")
     plt.scatter(non_smoker["age"], non_smoker["charges"], color="blue", label="Non Smokers")
@@ -71,11 +84,14 @@ def visualize_data(insurance_data):
     
 
 def correlation_analysis(insurance_data):
+    #Calculates and prints the correlation matrix for numerical features
+    #to examine their relationships with insurance charges.
     correlation_matrix = insurance_data[["age", "bmi", "children", "charges"]].corr()
     print(correlation_matrix)
 
 
 def visualize_correlation(insurance_data):
+    #Heatmap gives an idea of how age, bmi, children, and insurance charges are correlated
     correlation_matrix = insurance_data[["age", "bmi", "children", "charges"]].corr()
     plt.figure()
     sns.heatmap(correlation_matrix, annot=True, fmt=".2f")
@@ -84,21 +100,28 @@ def visualize_correlation(insurance_data):
     plt.show()
     
 def prepare_data(insurance_data):
+    #Sets x to every column besides charges and y values to column of charges
     x = insurance_data.drop(columns=["charges"])
     y = insurance_data["charges"]
     
     return x, y
 
 def split_data(x, y):
+    #train_test_split is used on x and y values to train the model.
+    #Test size of 0.2 means 20% of the data is being used for testing
+    #While 80% is being used for training.
+    #random_state controls randomness of data splitting
     x_train, x_test, y_train, y_test = train_test_split(x, y, test_size=0.2, random_state=42)
     
     return x_train, x_test, y_train, y_test
     
     
 def identify_features(x_train):
+    #Set up categorical and numerical columns
     categorical_columns = x_train.select_dtypes(exclude=["number"]).columns.tolist()
     numerical_columns = x_train.select_dtypes(include=["number"]).columns.tolist()
-    
+
+    #iterating over a list of column names and printing their unique values
     for column in categorical_columns:
         print(column, x_train[column].unique())
         
@@ -106,6 +129,10 @@ def identify_features(x_train):
 
 
 def encode_features(x_train, x_test, categorical_columns, numerical_columns):
+    #Converts categorical features into numerical values using one-hot encoding.
+    #Fits the encoder on training data and applies it to testing data to
+    #prevent data leakage. Combines the encoded categorical features with
+    #the existing numerical features and returns the processed arrays.
     encoder = OneHotEncoder(handle_unknown="ignore", sparse_output=False)
     x_train_encoded = encoder.fit_transform(x_train[categorical_columns])
     x_test_encoded = encoder.transform(x_test[categorical_columns])
@@ -121,16 +148,22 @@ def encode_features(x_train, x_test, categorical_columns, numerical_columns):
 
 
 def train_model(x_train_final, y_train):
+    #Trains using the Linear Regression model to predict insurance charges
     model = LinearRegression()
     trained_model = model.fit(x_train_final, y_train)
     return trained_model
     
 def predict_charges(model, x_test_final):
+    #Uses the trained Linear Regression model to predict insurance charges
+    #for the testing dataset and returns the predicted values.
     predictions = model.predict(x_test_final)
     
     return predictions
 
 def evaluate_model(y_test, y_pred):
+    #Evaluates model performance by comparing actual and predicted charges.
+    #Calculates MAE, RMSE, and R² to measure prediction errors
+    #and how well the model explains variation in insurance charges.
     mae = mean_absolute_error(y_test, y_pred)
     rmse = np.sqrt(mean_squared_error(y_test, y_pred))
     r_squared = r2_score(y_test, y_pred)
@@ -141,6 +174,9 @@ def evaluate_model(y_test, y_pred):
 
 
 def visualize_predictions(y_test, y_pred):
+    #Creates a scatterplot comparing actual and predicted insurance charges.
+    #The red diagonal line represents perfect predictions, where actual
+    #and predicted charges are equal. Saves the graph to the outputs folder.
     plt.figure()
     plt.scatter(y_test, y_pred, alpha=0.5)
     minimum = min(y_test.min(), y_pred.min())
@@ -159,6 +195,9 @@ def visualize_predictions(y_test, y_pred):
         
     
 def visualize_residuals(y_test, y_pred):
+    #Calculates residuals by subtracting predicted charges from actual charges.
+    #Plots residuals against predicted charges to identify patterns in errors.
+    #The horizontal line at zero represents predictions with no error.
     residuals = y_test - y_pred
     plt.figure()
     plt.scatter(y_pred, residuals)
@@ -171,6 +210,8 @@ def visualize_residuals(y_test, y_pred):
     
 
 def main():
+    #Runs the complete analysis pipeline, including data exploration,
+    #visualization, preprocessing, model training, and evaluation.
     insurance_data = load_data()
     analyze_data(insurance_data)
     visualize_data(insurance_data)
